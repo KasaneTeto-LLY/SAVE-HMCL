@@ -1,0 +1,185 @@
+diff --git a/HMCL/src/main/java/org/jackhuang/hmcl/Launcher.java b/HMCL/src/main/java/org/jackhuang/hmcl/Launcher.java
+index e7f4261..229a48a 100644
+--- a/HMCL/src/main/java/org/jackhuang/hmcl/Launcher.java
++++ b/HMCL/src/main/java/org/jackhuang/hmcl/Launcher.java
+@@ -142,7 +142,6 @@ public final class Launcher extends Application {
+                 Platform.setImplicitExit(false);
+                 Controllers.initialize(primaryStage);
+ 
+-                RegionUtils.init();
+                 UpdateChecker.init();
+ 
+                 primaryStage.show();
+diff --git a/HMCL/src/main/java/org/jackhuang/hmcl/ui/download/VersionsPage.java b/HMCL/src/main/java/org/jackhuang/hmcl/ui/download/VersionsPage.java
+index 9b44c06..7cc1fb0 100644
+--- a/HMCL/src/main/java/org/jackhuang/hmcl/ui/download/VersionsPage.java
++++ b/HMCL/src/main/java/org/jackhuang/hmcl/ui/download/VersionsPage.java
+@@ -52,12 +52,14 @@ import org.jackhuang.hmcl.ui.FXUtils;
+ import org.jackhuang.hmcl.ui.SVG;
+ import org.jackhuang.hmcl.ui.animation.ContainerAnimations;
+ import org.jackhuang.hmcl.ui.animation.TransitionPane;
+-import org.jackhuang.hmcl.ui.construct.*;
++import org.jackhuang.hmcl.ui.construct.ComponentList;
++import org.jackhuang.hmcl.ui.construct.RipplerContainer;
++import org.jackhuang.hmcl.ui.construct.SpinnerPane;
++import org.jackhuang.hmcl.ui.construct.TwoLineListItem;
+ import org.jackhuang.hmcl.ui.wizard.Navigation;
+ import org.jackhuang.hmcl.ui.wizard.Refreshable;
+ import org.jackhuang.hmcl.ui.wizard.WizardPage;
+ import org.jackhuang.hmcl.util.NativePatcher;
+-import org.jackhuang.hmcl.util.RegionUtils;
+ import org.jackhuang.hmcl.util.StringUtils;
+ import org.jackhuang.hmcl.util.i18n.I18n;
+ import org.jackhuang.hmcl.util.platform.OperatingSystem;
+@@ -453,23 +455,7 @@ public final class VersionsPage extends Control implements WizardPage, Refreshab
+                 root.setCenter(transitionPane);
+             }
+ 
+-            if (RegionUtils.isIsChinaMainlandNetwork()) {
+-                BorderPane wrapper = new BorderPane();
+-
+-                HintPane hint = new HintPane(MessageDialogPane.MessageType.WARNING);
+-                hint.setSegment(i18n("download.china"));
+-
+-                BorderPane.setMargin(hint, new Insets(10, 10, 0, 10));
+-
+-                wrapper.setTop(hint);
+-
+-                root.setDisable(true);
+-                wrapper.setCenter(root);
+-
+-                this.getChildren().setAll(wrapper);
+-            } else {
+-                this.getChildren().setAll(root);
+-            }
++            this.getChildren().setAll(root);
+         }
+ 
+         private void updateList() {
+diff --git a/HMCL/src/main/java/org/jackhuang/hmcl/ui/instances/DownloadListPage.java b/HMCL/src/main/java/org/jackhuang/hmcl/ui/instances/DownloadListPage.java
+index 4df4690..6dff5ce 100644
+--- a/HMCL/src/main/java/org/jackhuang/hmcl/ui/instances/DownloadListPage.java
++++ b/HMCL/src/main/java/org/jackhuang/hmcl/ui/instances/DownloadListPage.java
+@@ -628,23 +628,7 @@ public class DownloadListPage extends Control implements DecoratorPage {
+                 });
+             }
+ 
+-            if (RegionUtils.isIsChinaMainlandNetwork()) {
+-                BorderPane wrapper = new BorderPane();
+-
+-                HintPane hint = new HintPane(MessageDialogPane.MessageType.WARNING);
+-                hint.setSegment(i18n("download.china"));
+-
+-                BorderPane.setMargin(hint, new Insets(10, 10, 0, 10));
+-
+-                wrapper.setTop(hint);
+-
+-                pane.setDisable(true);
+-                wrapper.setCenter(pane);
+-
+-                this.getChildren().setAll(wrapper);
+-            } else {
+-                this.getChildren().setAll(pane);
+-            }
++            getChildren().setAll(pane);
+         }
+ 
+         private record CategoryIndented(int indent, RemoteAddonRepository.Category category) {
+diff --git a/HMCL/src/main/java/org/jackhuang/hmcl/util/RegionUtils.java b/HMCL/src/main/java/org/jackhuang/hmcl/util/RegionUtils.java
+index f9b181a..7037d0d 100644
+--- a/HMCL/src/main/java/org/jackhuang/hmcl/util/RegionUtils.java
++++ b/HMCL/src/main/java/org/jackhuang/hmcl/util/RegionUtils.java
+@@ -17,32 +17,20 @@
+  */
+ package org.jackhuang.hmcl.util;
+ 
+-import org.jackhuang.hmcl.task.Schedulers;
+-import org.jackhuang.hmcl.util.gson.JsonSerializable;
+-import org.jackhuang.hmcl.util.gson.JsonUtils;
+ import org.jackhuang.hmcl.util.i18n.LocaleUtils;
+-import org.jackhuang.hmcl.util.io.NetworkUtils;
+ import org.jackhuang.hmcl.util.platform.NativeUtils;
+ import org.jackhuang.hmcl.util.platform.OperatingSystem;
+ import org.jackhuang.hmcl.util.platform.windows.Kernel32;
+ import org.jackhuang.hmcl.util.platform.windows.WinConstants;
+ import org.jetbrains.annotations.NotNullByDefault;
+-import org.jetbrains.annotations.Nullable;
+ 
+ import java.time.Duration;
+ import java.time.ZoneId;
+ import java.time.ZonedDateTime;
+ 
+-import static org.jackhuang.hmcl.util.logging.Logger.LOG;
+-
+ @NotNullByDefault
+ public final class RegionUtils {
+ 
+-    /// Pre-check if the network is in China Mainland to avoid blocking the UI thread.
+-    public static void init() {
+-        Schedulers.io().execute(RegionUtils::isIsChinaMainlandNetwork);
+-    }
+-
+     private static final boolean IS_CHINA_MAINLAND_MACHINE = checkMachineIsChinaMainland();
+ 
+     private static boolean checkMachineIsChinaMainland() {
+@@ -70,60 +58,6 @@ public final class RegionUtils {
+         return IS_CHINA_MAINLAND_MACHINE;
+     }
+ 
+-    private static volatile @Nullable Boolean isChinaMainlandNetwork;
+-
+-    private static boolean checkChinaMainlandNetwork() {
+-        if (!IS_CHINA_MAINLAND_MACHINE)
+-            return false;
+-
+-        switch (ZoneId.systemDefault().getId()) {
+-            case "Antarctica/Casey",
+-                 "Asia/Hong_Kong",
+-                 "Asia/Irkutsk",
+-                 "Asia/Kuching",
+-                 "Asia/Macau",
+-                 "Asia/Makassar",
+-                 "Asia/Manila",
+-                 "Asia/Singapore",
+-                 "Asia/Taipei",
+-                 "Asia/Ulaanbaatar",
+-                 "Australia/Perth" -> {
+-                return false;
+-            }
+-        }
+-
+-        @NotNullByDefault
+-        @JsonSerializable
+-        record IpWhoIsResponse(boolean success, String country_code) {
+-        }
+-
+-        try {
+-            LOG.info("Fetching network information");
+-            IpWhoIsResponse result = JsonUtils.fromNonNullJson(NetworkUtils.doGet("https://ipwho.is"), IpWhoIsResponse.class);
+-            return !result.success || "CN".equalsIgnoreCase(result.country_code);
+-        } catch (Throwable e) {
+-            LOG.warning("Failed to get the network information", e);
+-            return true;
+-        }
+-    }
+-
+-    public static boolean isIsChinaMainlandNetwork() {
+-        Boolean value = isChinaMainlandNetwork;
+-        if (value != null)
+-            return value;
+-
+-        synchronized (RegionUtils.class) {
+-            value = isChinaMainlandNetwork;
+-
+-            if (value != null)
+-                return value;
+-
+-            boolean result = checkChinaMainlandNetwork();
+-            isChinaMainlandNetwork = result;
+-            return result;
+-        }
+-    }
+-
+     private RegionUtils() {
+     }
+ }
