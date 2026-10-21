@@ -17,12 +17,13 @@ param(
     [string]$Tag = 'v3.17.0.362-restore1',
     [string]$Repo = 'KasaneTeto-LLY/SAVE-HMCL',
     [string]$AssetsDir = '',
-    [string]$NotesFile = (Join-Path $PSScriptRoot 'RELEASE_NOTES.md'),
+    [string]$NotesFile = '',
     [string]$Title = 'restore1 - 3.17.0.362 非官方修改版',
     [switch]$DryRun
 )
 
 $ErrorActionPreference = 'Stop'
+if (-not $NotesFile) { $NotesFile = Join-Path $PSScriptRoot 'RELEASE_NOTES.md' }
 
 if (-not $AssetsDir) {
     $candidates = @(

@@ -15,14 +15,17 @@
 param(
     [string]$Version = '3.17.0.362',
     [string]$Suffix = '+restore1',
-    [string]$OutDir = (Join-Path $PSScriptRoot 'out'),
-    [string]$ReleaseDir = (Join-Path $PSScriptRoot 'release-assets'),
-    [string]$SrcRoot = (Join-Path $env:LOCALAPPDATA 'SaveMC-build\HMCL'),
+    [string]$OutDir = '',
+    [string]$ReleaseDir = '',
+    [string]$SrcRoot = '',
     [string]$Commit = 'acc9740',
     [string]$Upstream = 'https://github.com/HMCL-dev/HMCL'
 )
 
 $ErrorActionPreference = 'Stop'
+if (-not $OutDir) { $OutDir = Join-Path $PSScriptRoot 'out' }
+if (-not $ReleaseDir) { $ReleaseDir = Join-Path $PSScriptRoot 'release-assets' }
+if (-not $SrcRoot) { $SrcRoot = Join-Path $env:LOCALAPPDATA 'SaveMC-build\HMCL' }
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $jarName = "HMCL-$Version.jar"
