@@ -57,24 +57,6 @@ powershell -ExecutionPolicy Bypass -File .\Build-HMCL.ps1 -SkipTests -VersionRoo
 | `-DryRun` | 只检查环境并打印计划 |
 
 也可以直接双击 `Build-HMCL.cmd`（默认跳过测试）。产物输出到 `out\`。
-
-## 完整发布流程
-
-```powershell
-# 1. 编译（产物：out\HMCL-3.17.0.362.jar / .exe）
-.\Build-HMCL.ps1 -SkipTests -VersionRoot 3.17.0 -BuildNumber 362
-
-# 2. 打包成发布资产（jar 内嵌 GPL 全文、exe 重新拼接、源码包、SHA256SUMS）
-.\package-release.ps1 -Version 3.17.0.362
-#    → release-assets\HMCL-3.17.0.362+restore1.exe / .jar / -src.zip
-
-# 3. 发布到 GitHub Release（不存在则新建，已存在则覆盖同名资产）
-.\publish.ps1
-```
-
-`publish.ps1` 需要 GitHub CLI：`winget install GitHub.cli` 然后 `gh auth login`。
-先看计划可以加 `-DryRun`，指定标签用 `-Tag`，资产目录用 `-AssetsDir`。
-
 ## 其它启动器的补丁
 
 本仓库同时归档另外两个启动器的同类补丁，仅用于代码学习研究：
