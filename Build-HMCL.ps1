@@ -38,6 +38,16 @@
 .PARAMETER Clean
     删除工作目录后重新开始。
 
+.PARAMETER BuildNumber
+    构建号。传入后版本号 = <VersionRoot>.<BuildNumber>，例如 -VersionRoot 3.17.0 -BuildNumber 362
+    会得到 3.17.0.362；不传且不传 -VersionSha 时，版本号是上游对本地构建的默认值 3.17.SNAPSHOT。
+
+.PARAMETER VersionRoot
+    版本号前缀，配合 -BuildNumber 使用，例如 3.17.0。
+
+.PARAMETER VersionSha
+    传入后版本号变成 3.17.unofficial-<sha 前 7 位> 的形式（更诚实的非官方标记）。
+
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\Build-HMCL.ps1 -SkipTests
 
@@ -53,6 +63,9 @@ param(
     [string]$Patch = '',
     [string]$GhProxy = 'https://v4.gh-proxy.org',
     [string]$MavenMirror = 'https://maven.aliyun.com/repository/central',
+    [string]$VersionRoot = '',
+    [string]$BuildNumber = '',
+    [string]$VersionSha = '',
     [switch]$SkipTests,
     [switch]$DryRun,
     [switch]$Clean
@@ -352,6 +365,17 @@ function Invoke-Build([string]$Repo) {
     } else {
         Remove-Item Env:\MAVEN_CENTRAL_REPO -ErrorAction SilentlyContinue
     }
+
+    # 版本号：不传这三个参数时沿用上游逻辑（无 BUILD_NUMBER / GITHUB_SHA → "3.17.SNAPSHOT"）。
+    # 传 -VersionRoot 3.17.0 -BuildNumber 362 会得到 "3.17.0.362"。
+    foreach ($pair in @(@('VERSION_ROOT', $VersionRoot), @('BUILD_NUMBER', $BuildNumber), @('GITHUB_SHA', $VersionSha))) {
+        $name = $pair[0]
+        $value = $pair[1]
+        if ($value) { Set-Item -Path ("Env:\" + $name) -Value $value }
+        else { Remove-Item -Path ("Env:\" + $name) -ErrorAction SilentlyContinue }
+    }
+    if ($BuildNumber) { Write-Info ("构建版本号：{0}.{1}（hmcl.version.type 仍为 unofficial）" -f $VersionRoot, $BuildNumber) }
+    elseif ($VersionSha) { Write-Info ("构建版本号：{0}.unofficial-{1}" -f $VersionRoot, $VersionSha.Substring(0, 7)) }
 
     # --no-watch-fs：部分机器上 Gradle 的 fileevents 原生库加载失败（native services 初始化报错），
     # 关掉文件系统监视可绕开；对一次性构建几乎没有影响。
