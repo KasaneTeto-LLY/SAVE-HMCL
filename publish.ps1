@@ -61,8 +61,13 @@ Write-Host "资产目录：$AssetsDir" -ForegroundColor Cyan
 $assets | ForEach-Object { Write-Host ("  + {0}" -f (Split-Path -Leaf $_)) -ForegroundColor DarkGray }
 
 $exists = $false
-& gh release view $Tag --repo $Repo --json tagName 2>$null | Out-Null
-if ($LASTEXITCODE -eq 0) { $exists = $true }
+$prevEa = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+try {
+    & gh release view $Tag --repo $Repo --json tagName *> $null
+    if ($LASTEXITCODE -eq 0) { $exists = $true }
+} catch { }
+$ErrorActionPreference = $prevEa
 
 if ($DryRun) {
     if ($exists) { Write-Host '计划：Release 已存在 → 覆盖上传资产' -ForegroundColor Yellow }
